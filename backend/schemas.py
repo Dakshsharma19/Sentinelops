@@ -31,3 +31,16 @@ class IncidentResponse(IncidentCreate):
 class IncidentUpdate(BaseModel):
     status: str
     severity: str | None = None
+
+
+class UserCreate(BaseModel):
+    email: str
+    full_name: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    is_active: bool
