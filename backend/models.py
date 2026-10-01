@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean ,DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean ,DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -80,6 +80,11 @@ class Service(Base):
         cascade="all, delete-orphan",
     )
 
+    events: Mapped[list["Event"]] = relationship(
+    back_populates="service",
+    cascade="all, delete-orphan",
+)
+
 
 class Incident(Base):
     __tablename__ = "incidents"
@@ -129,4 +134,53 @@ class Incident(Base):
 
     service: Mapped["Service"] = relationship(
         back_populates="incidents",
+    )
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        index=True,
+    )
+
+    service_id: Mapped[int] = mapped_column(
+        ForeignKey("services.id"),
+        nullable=False,
+    )
+
+    event_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+    )
+
+    metric_name: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    value: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    severity: Mapped[str] = mapped_column(
+        String(20),
+        default="info",
+        nullable=False,
+    )
+
+    message: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+
+    service: Mapped["Service"] = relationship(
+        back_populates="events",
     )

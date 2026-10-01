@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 
 from database import Base, engine, get_db
-from models import Incident, Service , User
+from models import Event, Incident, Service , User
 from schemas import (
+    EventCreate,
+    EventResponse,
     IncidentCreate,
     IncidentResponse,
     IncidentUpdate,
@@ -27,6 +29,73 @@ app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
 print("Database tables created successfully.Hurrayy!!!!!!")
+#----------------------------------------------- EVENTS--------------------------------------------
+@app.post("/events", response_model=EventResponse)
+def create_event(
+    event: EventCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = db.get(Service, event.service_id)
+
+    if service is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Service not found",
+        )
+
+    new_event = Event(
+        service_id=event.service_id,
+        event_type=event.event_type,
+        metric_name=event.metric_name,
+        value=event.value,
+        severity=event.severity,
+        message=event.message,
+    )
+
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+
+    return new_event
+
+@app.get("/events")
+def get_events(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    events = (
+        db.query(Event)
+        .order_by(Event.created_at.desc())
+        .all()
+    )
+
+    return events
+
+@app.get("/services/{service_id}/events")
+def get_service_events(
+    service_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = db.get(Service, service_id)
+
+    if service is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Service not found",
+        )
+
+    events = (
+        db.query(Event)
+        .filter(Event.service_id == service_id)
+        .order_by(Event.created_at.desc())
+        .all()
+    )
+
+    return events
+
+#----------------------------------LOGIN, REGISTER AND GET CURRENT USER--------------------------------------------
 
 @app.post("/auth/login")
 def login_user(
@@ -149,7 +218,7 @@ def get_services(
 @app.post("/incidents", response_model=IncidentResponse)
 def create_incident(
     incident: IncidentCreate,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),   
     current_user: User = Depends(get_current_user)
 ):
     service = db.get(Service, incident.service_id)

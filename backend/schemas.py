@@ -40,7 +40,24 @@ class UserCreate(BaseModel):
 
 
 class UserResponse(BaseModel):
+
+
+
     id: int
     email: str
     full_name: str
     is_active: bool
+
+
+class EventCreate(BaseModel):
+    service_id: int
+    event_type: str
+    metric_name: str | None = None
+    value: float | None = None
+    severity: str = "info"
+    message: str | None = None
+
+
+class EventResponse(EventCreate):
+    id: int
+    created_at: datetime
