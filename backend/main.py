@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from detection import evaluate_event
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -56,6 +57,11 @@ def create_event(
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
+
+    evaluate_event(
+        new_event,
+        db,
+    )
 
     return new_event
 
